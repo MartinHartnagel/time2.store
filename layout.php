@@ -12,5 +12,5 @@ if ($method == "GET") {
     $db->loadLayoutAndChanged($at, $layout, $changed);
     $o = ['layout' => $layout, 'changed' => $changed];
     $c = json_encode($o);
-    echo($c);
+    echo ($c);
 }

@@ -1,16 +1,19 @@
 <?php
 
-class MysqlDB { 
+class MysqlDB
+{
 
     public $id;
     public $db;
 
-    public function __construct($id) {
+    public function __construct($id)
+    {
         $this->id = $id;
         $this->db = new PDO('mysql:host=' . DB_HOST . ':' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASSWORD);
     }
 
-    public function loadLayoutAndChanged($at, &$layout, &$changed) {
+    public function loadLayoutAndChanged($at, &$layout, &$changed)
+    {
         $stmt = $this->db->prepare('SELECT `value`, `time` FROM `' . $this->id . '_LAYOUT` WHERE `time` <= ? ORDER BY `time` DESC LIMIT 1');
         $stmt->execute([$at]);
         $data = $stmt->fetch();
@@ -23,23 +26,25 @@ class MysqlDB {
         $changed = $data['time'];
     }
 
-    public function storeLayout($at, $value) {
+    public function storeLayout($at, $value)
+    {
         $sql = 'DELETE FROM `' . $this->id . '_LAYOUT` WHERE `time` = :time';
         $statement = $this->db->prepare($sql);
         $statement->execute(['time' => $at]);
-        
+
         $sql = 'INSERT INTO `' . $this->id . '_LAYOUT` (`time`, `value`) VALUES (?, ?)';
         $statement = $this->db->prepare($sql);
         $statement->execute([$at, $value]);
     }
 
-    public function loadEventDays(&$days) {
+    public function loadEventDays(&$days)
+    {
         $days = [];
         // Events
         $stmt = $this->db->prepare('SELECT DISTINCT DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ROUND(`time` / 1000)), \'+00:00\', @@session.time_zone), \'%Y-%m-%d\') AS `day` FROM `' . $this->id . '_EVENT` ORDER BY `time` ASC');
         $stmt->execute([]);
         while ($data = $stmt->fetch()) {
-                $days[] = $data['day'];
+            $days[] = $data['day'];
         }
         //Infos
         $stmt = $this->db->prepare('SELECT DISTINCT DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(ROUND(`time` / 1000)), \'+00:00\', @@session.time_zone), \'%Y-%m-%d\') AS `day` FROM `' . $this->id . '_INFO` ORDER BY `time` ASC');
@@ -51,15 +56,16 @@ class MysqlDB {
         }
         sort($days);
     }
-    
-    public function loadEventsOnDay($day, &$events) {
+
+    public function loadEventsOnDay($day, &$events)
+    {
         $es = [];
-        
+
         // Events:
-        
+
         $stmt = $this->db->prepare('SELECT `time`, `name`, `color`, `end` FROM `' . $this->id . '_EVENT` WHERE `time` >= ? AND `time` <= ? ORDER BY `time` DESC');
-        $stmt->execute([strtotime($day)*1000, strtotime($day.'T23:59:59')*1000]);
-        
+        $stmt->execute([strtotime($day) * 1000, strtotime($day . 'T23:59:59') * 1000]);
+
         $lastTime = '';
         while ($data = $stmt->fetch()) {
             if (strlen($data['name']) > 0) {
@@ -73,21 +79,21 @@ class MysqlDB {
                 $lastTime = $data['time'];
             }
         }
-        
+
         // Infos:
-        
+
         $stmt = $this->db->prepare('SELECT `time`, `info` FROM `' . $this->id . '_INFO` WHERE `time` >= ? AND `time` <= ? ORDER BY `time` ASC');
-        $stmt->execute([strtotime($day)*1000, strtotime($day.'T23:59:59')*1000]);
-        
+        $stmt->execute([strtotime($day) * 1000, strtotime($day . 'T23:59:59') * 1000]);
+
         while ($data = $stmt->fetch()) {
             if (strlen($data['info']) > 0) {
                 $es[$data['time'] . 'i'] = $data['time'] . "\t" . $data['info'];
             }
         }
-        
+
         ksort($es);
         $c = '';
-        foreach($es as $t=>$e) {
+        foreach ($es as $t => $e) {
             if (strlen($c) > 0) {
                 $c .= "\n";
             }
@@ -96,11 +102,12 @@ class MysqlDB {
         $events = trim($c);
     }
 
-    public function loadEventsInRange($from, $to, &$events, &$infos) {
+    public function loadEventsInRange($from, $to, &$events, &$infos)
+    {
         $events = [];
         $stmt = $this->db->prepare('SELECT `time`, `name`, `color`, `end` FROM `' . $this->id . '_EVENT` WHERE (`end` IS NULL OR `end` >= :from) AND `time` <= :to ORDER BY `time` ASC');
         $stmt->execute(['from' => $from, 'to' => $to]);
-        
+
         while ($data = $stmt->fetch()) {
             if (strlen($data['name']) > 0) {
                 $e = ["s" => $data['time'], "n" => $data['name'], "c" => $data['color']];
@@ -110,11 +117,11 @@ class MysqlDB {
                 $events[] = $e;
             }
         }
-        
+
         $infos = [];
         $stmt = $this->db->prepare('SELECT `time`, `info` FROM `' . $this->id . '_INFO` WHERE `time` >= ? AND `time` <= ? ORDER BY `time` ASC');
         $stmt->execute([$from, $to]);
-        
+
         while ($data = $stmt->fetch()) {
             if (strlen($data['info']) > 0) {
                 $infos[] = ["s" => $data['time'], "i" => $data['info']];
@@ -122,7 +129,8 @@ class MysqlDB {
         }
     }
 
-    public function storeEvent($time, $name, $color, $end) {
+    public function storeEvent($time, $name, $color, $end)
+    {
         $sql = 'DELETE FROM `' . $this->id . '_EVENT` WHERE `time` = :time';
         $statement = $this->db->prepare($sql);
         $statement->execute(['time' => $time]);
@@ -137,27 +145,30 @@ class MysqlDB {
             $statement->execute(['time' => $time, 'name' => $name, 'color' => $color, 'end' => $end]);
         }
     }
-    
-    public function storeInfo($time, $info) {
+
+    public function storeInfo($time, $info)
+    {
         $sql = 'DELETE FROM `' . $this->id . '_INFO` WHERE `time` = :time';
         $statement = $this->db->prepare($sql);
         $statement->execute(['time' => $time]);
-    
+
         $sql = 'INSERT INTO `' . $this->id . '_INFO` (`time`, `info`) VALUES (:time, :info)';
         $statement = $this->db->prepare($sql);
         $statement->execute(['time' => $time, 'info' => $info]);
     }
 
-    public function loadInvoiceChecksums(&$checksums) {
+    public function loadInvoiceChecksums(&$checksums)
+    {
         $stmt = $this->db->prepare('SELECT `key`, SHA2(`value`, 256) as  `checksum` FROM `' . $this->id . '_INVOICE` WHERE `key` like \'invoice_%\'');
         $stmt->execute([]);
         $checksums = [];
         while ($data = $stmt->fetch()) {
-                $checksums[$data['key']] = $data['checksum'];
+            $checksums[$data['key']] = $data['checksum'];
         }
     }
 
-    public function loadInvoiceValue($key) {
+    public function loadInvoiceValue($key)
+    {
         $stmt = $this->db->prepare('SELECT `value` FROM `' . $this->id . '_INVOICE` WHERE `key` like :key');
         $stmt->execute(['key' => $key]);
         $data = $stmt->fetch();
@@ -167,41 +178,47 @@ class MysqlDB {
         return $data['value'];
     }
 
-    public function storeInvoice($invoiceNumber, $extracted) {
+    public function storeInvoice($invoiceNumber, $extracted)
+    {
         $this->storeInvoiceKeyValue('invoice_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $invoiceNumber), json_encode($extracted['invoice']));
-        foreach($extracted['twigs'] as $k=>$v) {
+        foreach ($extracted['twigs'] as $k => $v) {
             $this->storeInvoiceKeyValue($k, $v);
         }
-        foreach($extracted['assets'] as $k=>$v) {
+        foreach ($extracted['assets'] as $k => $v) {
             $this->storeInvoiceKeyValue($k, $v);
         }
     }
 
-    private function storeInvoiceKeyValue($key, $value) {
+    private function storeInvoiceKeyValue($key, $value)
+    {
         $this->deleteInvoiceKeyValue($key);
         $sql = 'INSERT INTO `' . $this->id . '_INVOICE` (`key`, `value`) VALUES (:key, :value)';
         $statement = $this->db->prepare($sql);
         $statement->execute(['key' => $key, 'value' => $value]);
     }
 
-    public function deleteInvoice($invoiceNumber) {
+    public function deleteInvoice($invoiceNumber)
+    {
         $key = 'invoice_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $invoiceNumber);
         $this->deleteInvoiceKeyValue($key);
     }
 
-    private function deleteInvoiceKeyValue($key) {
+    private function deleteInvoiceKeyValue($key)
+    {
         $sql = 'DELETE FROM `' . $this->id . '_INVOICE` WHERE `key` = :key';
         $statement = $this->db->prepare($sql);
         $statement->execute(['key' => $key]);
     }
 
-    public function deleteAllInvoices() {
+    public function deleteAllInvoices()
+    {
         $sql = 'DELETE FROM `' . $this->id . '_INVOICE`';
         $statement = $this->db->prepare($sql);
         $statement->execute([]);
     }
 
-    public function cleanup() {
+    public function cleanup()
+    {
         // orphaned twigs and assets
         $stmt = $this->db->prepare('SELECT `value` FROM `' . $this->id . '_INVOICE` WHERE `key` like \'invoice_%\'');
         $stmt->execute([]);
@@ -222,7 +239,7 @@ class MysqlDB {
                 $orphaned[] = $data['key'];
             }
         }
-        foreach($orphaned as $key) {
+        foreach ($orphaned as $key) {
             $this->deleteInvoiceKeyValue($key);
         }
     }

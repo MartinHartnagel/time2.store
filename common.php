@@ -24,8 +24,11 @@ define("PARTS_CHUNK", 3900);
 define("SYNC_OVERRIDE_SEND_IMIT", 20000);
 
 define("DEBUG", false);
-if (DEBUG) {
-    $log = fopen(__DIR__ . "/debug.log", "a");
+if (DEBUG) $log = fopen(__DIR__ . "/debug.log", "a");
+
+function debugLog($message) {
+    global $log;
+    if (DEBUG) fwrite($log, date("c") . " " . $message . "\n");
 }
 
 $allowed = ['https://time2.emphasize.de', 'https://time2.dev.emphasize.de', 'http://localhost:3000'];

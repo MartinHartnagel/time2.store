@@ -30,19 +30,19 @@ if ($method == "GET") {
     header("status: 200");
     header('Content-Type: application/json;charset=utf-8;');
     $db->loadEventsInRange($from, $to, $events, $infos);
-    foreach($events as $i=>$e) {
+    foreach ($events as $i => $e) {
         if (+$e['s'] < $from) {
-            $events[$i]['s'] = "".$from;
+            $events[$i]['s'] = "" . $from;
         }
         if (!isset($e['e']) || +$e['e'] > $to) {
-            $events[$i]['e'] = "".$to;
+            $events[$i]['e'] = "" . $to;
         }
     }
     $entries = [];
     $offset = $from;
-    while($offset < $to) {
+    while ($offset < $to) {
         $sum = null;
-        switch($group) {
+        switch ($group) {
             case 'overall':
                 $next = $to;
                 break;
@@ -61,12 +61,12 @@ if ($method == "GET") {
         }
         $map = [];
         $io = [];
-        foreach($infos as $info) {
+        foreach ($infos as $info) {
             if ($info['s'] >= $offset && $info['s'] < $next) {
                 $io[$info['s']] = $info;
             }
         }
-        foreach($events as $i=>$event) {
+        foreach ($events as $i => $event) {
             if (+$event['s'] <= $next && +$event['e'] >= $offset) {
                 $s = max(+$event['s'], $offset);
                 $e = min(+$event['e'], $next);
@@ -75,7 +75,7 @@ if ($method == "GET") {
                     $map[$event['n']] = ['time' => 0, 'infos' => []];
                 }
                 $map[$event['n']]['time'] += $t;
-                foreach($infos as $info) {
+                foreach ($infos as $info) {
                     if ($info['s'] >= $s && $info['s'] < $e) {
                         $map[$event['n']]['infos'][] = $info;
                         unset($io[$info['s']]);
@@ -84,7 +84,7 @@ if ($method == "GET") {
                 $sum += $t;
             }
         }
-        foreach($map as $name=>$o) {
+        foreach ($map as $name => $o) {
             $entry = ['start' => $offset, 'name' => $name, 'time' => round($o['time'] / $quantisize) * $quantisize];
             if (count($o['infos']) && $includeInfos) {
                 $entry['infos'] = $o['infos'];
@@ -104,5 +104,5 @@ if ($method == "GET") {
     }
     $o = ['entries' => $entries];
     $c = json_encode($o);
-    echo($c);
+    echo ($c);
 }

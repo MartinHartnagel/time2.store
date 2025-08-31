@@ -30,177 +30,77 @@ if ($method == "POST") {
         exit();
     }
 
-    if (DEBUG) {
-        fwrite(
-            $log,
-            date("c") .
-                " " .
-                $customer .
-                " content-len " .
-                strlen($content) .
-                " content " .
-                $content .
-                "\n"
-        );
-    }
-
+    debugLog($customer . " content-len " . strlen($content) . " content " . $content);
     $offset = strlen("event: " . $eventType[1] . "\ndata: ");
-    if (DEBUG) {
-        fwrite(
-            $log,
-            date("c") .
-                " " .
-                $customer .
-                " offset " .
-                $offset .
-                " content " .
-                substr($content, $offset, null) .
-                "\n"
-        );
-    }
+    debugLog($customer . " offset " . $offset . " content " . substr($content, $offset, null));
     $json = substr($content, $offset);
-    if (DEBUG) {
-        fwrite($log, date("c") . " " . $customer . " json " . $json . "\n");
-    }
+    debugLog($customer . " json " . $json);
     $input = json_decode($json, true);
     if (json_last_error() > 0) {
         header("status: 400");
-        echo "input json_error: " .
-            json_last_error() .
-            "\nmessage: " .
-            json_last_error_msg() .
-            "\n";
+        echo ("input json_error: " . json_last_error() . "\nmessage: " . json_last_error_msg() . "\n");
         exit();
     }
 
-    if (DEBUG) {
-        fwrite(
-            $log,
-            date("c") . " " . $customer . " eventType " . $eventType[1] . "\n"
-        );
-    }
+    debugLog($customer . " eventType " . $eventType[1]);
     if (in_array($eventType[1], ["layout", "event", "invoice"])) {
         if (in_array($eventType[1], ["layout", "invoice"])) {
             $input = [$input];
         }
-        if (DEBUG) {
-            fwrite(
-                $log,
-                date("c") .
-                    " " .
-                    $customer .
-                    " input " .
-                    var_export($input, true) .
-                    "\n"
-            );
-        }
-
+        debugLog($customer . " input " . var_export($input, true));
         foreach ($input as $i) {
 
             if ($eventType[1] == 'invoice') {
                 if (isset($i['deleteAllInvoices'])) {
                     $db->deleteAllInvoices();
-                    if (DEBUG) {
-                        fwrite(
-                            $log,
-                            date("c") . " " . $customer . " deleteAllInvoices completed\n"
-                        );
-                    }
+                    debugLog($customer . " deleteAllInvoices completed");
                 } else if (isset($i['deleteInvoice'])) {
                     $db->deleteInvoice($i['deleteInvoice']);
-                    if (DEBUG) {
-                        fwrite(
-                            $log,
-                            date("c") . " " . $customer . " deleteInvoice completed\n"
-                        );
-                    }
+                    debugLog($customer . " deleteInvoice completed");
                 } else {
                     $db->storeInvoice($i['invoice']['invoiceNumber'], $i);
-                    if (DEBUG) {
-                        fwrite(
-                            $log,
-                            date("c") . " " . $customer . " storeInvoice completed\n"
-                        );
-                    }
+                    debugLog($customer . " storeInvoice completed");
                 }
             } else if (isset($i["n"])) {
                 //event
-                $db->storeEvent(
-                    $i["s"],
-                    str_replace("\n", "", $i["n"]),
-                    $i["c"],
-                    $i["e"]
-                );
-                if (DEBUG) {
-                    fwrite(
-                        $log,
-                        date("c") . " " . $customer . " storeEvent completed\n"
-                    );
-                }
+                $db->storeEvent($i["s"], str_replace("\n", "", $i["n"]), $i["c"], $i["e"]);
+                debugLog("storeEvent completed");
             } elseif (isset($i["i"])) {
                 //info
                 $db->storeInfo($i["s"], str_replace("\n", "", $i["i"]));
-                if (DEBUG) {
-                    fwrite(
-                        $log,
-                        date("c") . " " . $customer . " storeInfo completed\n"
-                    );
-                }
+                debugLog("storeInfo completed");
             } elseif (isset($i["v"])) {
                 // layout
                 $layoutAt = isset($_REQUEST["a"])
                     ? preg_replace("/[^0-9]/", "", $_REQUEST["a"])
                     : floor(microtime(true) * 1000);
                 $db->storeLayout($layoutAt, json_encode($i));
-                if (DEBUG) {
-                    fwrite(
-                        $log,
-                        date("c") . " " . $customer . " storeLayout completed\n"
-                    );
-                }
+                debugLog("storeLayout completed");
             } else if (isset($i["s"])) {
                 // stop event
-                $db->storeEvent(
-                    $i["s"],
-                    '',
-                    '',
-                    $i["s"]
-                );
-                if (DEBUG) {
-                    fwrite(
-                        $log,
-                        date("c") . " " . $customer . " storeEvent completed\n"
-                    );
-                }
+                $db->storeEvent($i["s"], '', '', $i["s"]);
+                debugLog("storeEvent completed");
             } else {
                 header("status: 400");
-                if (DEBUG) {
-                    fwrite(
-                        $log,
-                        date("c") . " " . $customer . " unknown input " . var_export($i, true) . "\n"
-                    );
-                }
+                debugLog("unknown input " . var_export($i, true));
                 exit();
             }
         }
         header("status: 204");
-            
-        $fork = pcntl_fork();
-        if ($fork == -1) {
-            if (DEBUG) {
-                fwrite($log, date("c") . " " . $customer . " fork failed\n");
+
+        if (function_exists("pcntl_fork")) {
+            $fork = pcntl_fork();
+            if ($fork == -1) {
+                debugLog($customer . " fork failed");
+            } elseif ($fork == 0) {
+                debugLog($customer . " forked postSSE");
+
+                postSSE($customer, $userId, "*", $content);
+                debugLog($customer . " forked postSSE completed");
             }
-        } elseif ($fork == 0) {
-            if (DEBUG) {
-                fwrite($log, date("c") . " " . $customer . " forked postSSE\n");
-            }
+        } else {
             postSSE($customer, $userId, "*", $content);
-            if (DEBUG) {
-                fwrite(
-                    $log,
-                    date("c") . " " . $customer . " forked postSSE completed\n"
-                );
-            }
+            debugLog("forked postSSE completed");
         }
     } elseif ($eventType[1] == "sync-check") {
         $db->loadLayoutAndChanged(time() * 1000, $layout, $layoutChanged);
@@ -283,86 +183,33 @@ if ($method == "POST") {
             unset($overrides["layout-changed"]);
         }
         if (count($overrides) > 0) {
-            if (DEBUG) {
-                fwrite(
-                    $log,
-                    date("c") .
-                        " " .
-                        $customer .
-                        " sync-override " .
-                        count($overrides) .
-                        "\n"
-                );
-            }
+            debugLog("sync-override " . count($overrides));
             $c = json_encode($overrides);
             if (json_last_error() > 0) {
                 header("status: 400");
-                echo "overrides json_error: " .
-                    json_last_error() .
-                    "\nmessage: " .
-                    json_last_error_msg() .
-                    "\n";
+                echo ("overrides json_error: " . json_last_error() . "\nmessage: " . json_last_error_msg() . "\n");
                 exit();
             }
-        
-            $identifier = base_convert(
-                random_int(100000000, 999999999),
-                10,
-                36
-            );
+
+            $identifier = base_convert(random_int(100000000, 999999999), 10, 36);
             $checksum = hash("sha256", $c);
             $parts = str_split(
                 base64_encode(rawurlencode($c)),
                 PARTS_CHUNK
             );
             for ($i = 0; $i < count($parts); $i++) {
-                    if (DEBUG) {
-                                fwrite($log, date("c") . " " . $customer . " postSSE(" . "event: sync-part\ndata: " .
-                        $identifier .
-                        ":" .
-                        $i .
-                        "=" .
-                        $parts[$i] . ");\n");
-                            }
-                postSSE(
-                    $customer,
-                    "store",
-                    $userId,
-                    "event: sync-part\ndata: " .
-                        $identifier .
-                        ":" .
-                        $i .
-                        "=" .
-                        $parts[$i]
-                );
+                debugLog("postSSE(" . "event: sync-part\ndata: " . $identifier . ":" . $i . "=" . $parts[$i] . ");");
+                postSSE($customer, "store", $userId, "event: sync-part\ndata: " . $identifier . ":" . $i . "=" . $parts[$i]);
                 usleep(500);
             }
-            postSSE(
-                $customer,
-                "store",
-                $userId,
-                "event: sync-override-complete\ndata: " .
-                    $identifier .
-                    ":" .
-                    count($parts) .
-                    "=" .
-                    $checksum
-            );
+            postSSE($customer, "store", $userId, "event: sync-override-complete\ndata: " . $identifier . ":" . count($parts) . "=" . $checksum);
         } else {
-            if (DEBUG) {
-                fwrite($log, date("c") . " " . $customer . " in sync\n");
-            }
-            postSSE(
-                $customer,
-                "store",
-                $userId,
-                "event: sync-info\ndata: in sync"
-            );
-
+            debugLog("in sync");
+            postSSE($customer, "store", $userId, "event: sync-info\ndata: in sync");
 
             if (rand(0, 100) == 42) {
                 // cleanup
-                if (DEBUG) fwrite($log, date("c") . " cleanup run\n");
+                debugLog("cleanup run");
                 $db->cleanup();
             }
         }
@@ -375,5 +222,5 @@ if ($method == "POST") {
     $c = json_encode(['layout' => $layout, 'layoutChanged' => +$layoutChanged, 'eventDays' => $days, 'invoiceChecksums' => $invoiceChecksums]);
     header("status: 200");
     header('Content-Type: application/json;charset=utf-8;');
-    echo($c);
+    echo ($c);
 }

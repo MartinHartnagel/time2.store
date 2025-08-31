@@ -130,11 +130,12 @@ EOF;
         $events = trim($c);
     }
 
-    public function loadEventsInRange($from, $to, &$events, &$infos) {
+    public function loadEventsInRange($from, $to, &$events, &$infos)
+    {
         $events = [];
         $stmt = $this->db->prepare('SELECT `time`, `name`, `color`, `end` FROM `EVENT` WHERE (`end` IS NULL OR `end` >= :from) AND `time` <= :to ORDER BY `time` ASC');
         $stmt->execute(['from' => $from, 'to' => $to]);
-        
+
         while ($data = $stmt->fetch()) {
             if (strlen($data['name']) > 0) {
                 $e = ["s" => $data['time'], "n" => $data['name'], "c" => $data['color']];
@@ -144,11 +145,11 @@ EOF;
                 $events[] = $e;
             }
         }
-        
+
         $infos = [];
         $stmt = $this->db->prepare('SELECT `time`, `info` FROM `INFO` WHERE `time` >= ? AND `time` <= ? ORDER BY `time` ASC');
         $stmt->execute([$from, $to]);
-        
+
         while ($data = $stmt->fetch()) {
             if (strlen($data['info']) > 0) {
                 $infos[] = ["s" => $data['time'], "i" => $data['info']];
@@ -176,7 +177,6 @@ EOF;
                 "end" => $end,
             ]);
         }
-        
     }
 
     public function storeInfo($time, $info)
@@ -251,7 +251,8 @@ EOF;
         $statement->execute(["key" => $key]);
     }
 
-    public function deleteAllInvoices() {
+    public function deleteAllInvoices()
+    {
         $sql = 'DELETE FROM `INVOICE`';
         $statement = $this->db->prepare($sql);
         $statement->execute([]);

@@ -16,5 +16,5 @@ if ($method == "GET") {
     $db->loadEventsInRange($from, $to, $events, $infos);
     $o = ['events' => $events, 'infos' => $infos];
     $c = json_encode($o);
-    echo($c);
+    echo ($c);
 }
