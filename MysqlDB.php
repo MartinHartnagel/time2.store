@@ -10,9 +10,9 @@ class MysqlDB {
         $this->db = new PDO('mysql:host=' . DB_HOST . ':' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASSWORD);
     }
 
-    public function loadLayoutAndChanged(&$layout, &$changed) {
-        $stmt = $this->db->prepare('SELECT `value`, `time` FROM `' . $this->id . '_LAYOUT` ORDER BY `time` DESC LIMIT 1');
-        $stmt->execute([]);
+    public function loadLayoutAndChanged($at, &$layout, &$changed) {
+        $stmt = $this->db->prepare('SELECT `value`, `time` FROM `' . $this->id . '_LAYOUT` WHERE `time` <= ? ORDER BY `time` DESC LIMIT 1');
+        $stmt->execute([$at]);
         $data = $stmt->fetch();
         if (!$data) {
             $layout = null;
@@ -96,16 +96,42 @@ class MysqlDB {
         $events = trim($c);
     }
 
+    public function loadEventsInRange($from, $to, &$events, &$infos) {
+        $events = [];
+        $stmt = $this->db->prepare('SELECT `time`, `name`, `color`, `end` FROM `' . $this->id . '_EVENT` WHERE (`end` IS NULL OR `end` >= :from) AND `time` <= :to ORDER BY `time` ASC');
+        $stmt->execute(['from' => $from, 'to' => $to]);
+        
+        while ($data = $stmt->fetch()) {
+            if (strlen($data['name']) > 0) {
+                $e = ["s" => $data['time'], "n" => $data['name'], "c" => $data['color']];
+                if ($data['end'] != null) {
+                    $e["e"] = $data['end'];
+                }
+                $events[] = $e;
+            }
+        }
+        
+        $infos = [];
+        $stmt = $this->db->prepare('SELECT `time`, `info` FROM `' . $this->id . '_INFO` WHERE `time` >= ? AND `time` <= ? ORDER BY `time` ASC');
+        $stmt->execute([$from, $to]);
+        
+        while ($data = $stmt->fetch()) {
+            if (strlen($data['info']) > 0) {
+                $infos[] = ["s" => $data['time'], "i" => $data['info']];
+            }
+        }
+    }
+
     public function storeEvent($time, $name, $color, $end) {
         $sql = 'DELETE FROM `' . $this->id . '_EVENT` WHERE `time` = :time';
         $statement = $this->db->prepare($sql);
         $statement->execute(['time' => $time]);
 
-        if ($end == $time) {
-            $sql = 'UPDATE `' . $this->id . '_EVENT` SET `end` = :time WHERE `time` < :time and (`end` is null OR `end` > :time)';
-            $statement = $this->db->prepare($sql);
-            $statement->execute(['time' => $time]);
-        } else {
+        $sql = 'UPDATE `' . $this->id . '_EVENT` SET `end` = :time WHERE `time` < :time and (`end` is null OR `end` > :time)';
+        $statement = $this->db->prepare($sql);
+        $statement->execute(['time' => $time]);
+
+        if ($end != $time) {
             $sql = 'INSERT INTO `' . $this->id . '_EVENT` (`time`, `name`, `color`, `end`) VALUES (:time, :name, :color, :end)';
             $statement = $this->db->prepare($sql);
             $statement->execute(['time' => $time, 'name' => $name, 'color' => $color, 'end' => $end]);

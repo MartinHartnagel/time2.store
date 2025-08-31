@@ -23,12 +23,12 @@ EOF;
         }
     }
 
-    public function loadLayoutAndChanged(&$layout, &$changed)
+    public function loadLayoutAndChanged($at, &$layout, &$changed)
     {
         $stmt = $this->db->prepare(
-            "SELECT `value`, `time` FROM `LAYOUT` ORDER BY `time` DESC LIMIT 1"
+            "SELECT `value`, `time` FROM `LAYOUT` WHERE `time` <= ? ORDER BY `time` DESC LIMIT 1"
         );
-        $stmt->execute([]);
+        $stmt->execute([$at]);
         $data = $stmt->fetch();
         if (!$data) {
             $layout = null;
@@ -130,17 +130,43 @@ EOF;
         $events = trim($c);
     }
 
+    public function loadEventsInRange($from, $to, &$events, &$infos) {
+        $events = [];
+        $stmt = $this->db->prepare('SELECT `time`, `name`, `color`, `end` FROM `EVENT` WHERE (`end` IS NULL OR `end` >= :from) AND `time` <= :to ORDER BY `time` ASC');
+        $stmt->execute(['from' => $from, 'to' => $to]);
+        
+        while ($data = $stmt->fetch()) {
+            if (strlen($data['name']) > 0) {
+                $e = ["s" => $data['time'], "n" => $data['name'], "c" => $data['color']];
+                if ($data['end'] != null) {
+                    $e["e"] = $data['end'];
+                }
+                $events[] = $e;
+            }
+        }
+        
+        $infos = [];
+        $stmt = $this->db->prepare('SELECT `time`, `info` FROM `INFO` WHERE `time` >= ? AND `time` <= ? ORDER BY `time` ASC');
+        $stmt->execute([$from, $to]);
+        
+        while ($data = $stmt->fetch()) {
+            if (strlen($data['info']) > 0) {
+                $infos[] = ["s" => $data['time'], "i" => $data['info']];
+            }
+        }
+    }
+
     public function storeEvent($time, $name, $color, $end)
     {
         $sql = "DELETE FROM `EVENT` WHERE `time` = :time";
         $statement = $this->db->prepare($sql);
         $statement->execute(["time" => $time]);
 
-        if ($end == $time) {
-            $sql = 'UPDATE `EVENT` SET `end` = :time WHERE `time` < :time and (`end` is null OR `end` > :time)';
-            $statement = $this->db->prepare($sql);
-            $statement->execute(['time' => $time]);
-        } else {
+        $sql = 'UPDATE `EVENT` SET `end` = :time WHERE `time` < :time and (`end` is null OR `end` > :time)';
+        $statement = $this->db->prepare($sql);
+        $statement->execute(['time' => $time]);
+
+        if ($end != $time) {
             $sql = "INSERT INTO `EVENT` (`time`, `name`, `color`, `end`) VALUES (:time, :name, :color, :end)";
             $statement = $this->db->prepare($sql);
             $statement->execute([
