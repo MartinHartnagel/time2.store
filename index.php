@@ -104,6 +104,12 @@ if ($method == "POST") {
         }
     } elseif ($eventType[1] == "sync-check") {
         $db->loadLayoutAndChanged(time() * 1000, $layout, $layoutChanged);
+        if (!isset($layout)) { // this db is empty, so trigger a full import
+            debugLog("sync-import");
+            postSSE($customer, "store", $userId, "event: sync-import\ndata: {}");
+            header("status: 204");
+            exit();
+        }
         $db->loadEventDays($days);
         $db->loadInvoiceChecksums($invoiceChecksums);
 
