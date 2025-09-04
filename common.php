@@ -1,25 +1,33 @@
 <?php
-define("DB_TYPE", "sqlite"); // or mysql, configure below
 
-/* mysql configure connection:
+define("DB_ALLOW_CREATE_TABLES", false); // set to true only temporarily to create the tables for your customer
 
-define("DB_HOST", "127.0.0.1");
-define("DB_PORT", "3306");
-define("DB_NAME", "db123");
-define("DB_USER", "user");
-define("DB_PASSWORD", "12345");
-
-// end of mysql configure connection */
-
-/*
--- mysql create schema, replace "test" with your customer/topic and execute on mysql instance:
-
-CREATE TABLE IF NOT EXISTS test_LAYOUT (time bigint NOT NULL UNIQUE, value text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL);
-CREATE TABLE IF NOT EXISTS test_EVENT (time bigint NOT NULL UNIQUE, name varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, color varchar(7) NOT NULL, end bigint);
-CREATE TABLE IF NOT EXISTS test_INFO (time bigint NOT NULL UNIQUE, info text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL);
-CREATE TABLE IF NOT EXISTS test_INVOICE (`key` varchar(256) NOT NULL UNIQUE, `value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL);
-*/
-
+if (true) { // set to false to not use SqliteDB
+    /* SqliteDB configure connection: */
+    define("DB_TYPE", "SqliteDB"); 
+    // end of SqliteDB configure connection */
+} else if (false) { // set to true to use MysqlDB
+    /* MysqlDB configure connection: */
+    define("DB_TYPE", "MysqlSB");
+    define("DB_HOST", "127.0.0.1");
+    define("DB_PORT", "3306");
+    define("DB_NAME", "db123");
+    define("DB_USER", "user");
+    define("DB_PASSWORD", "12345");
+    // end of MysqlSB configure connection */
+} else if (false) { // set to true to use PgsqlDB
+    /* PgsqlDB configure connection: */
+    define("DB_TYPE", "PgsqlDB");
+    define("DB_TYPE", "pgsql"); 
+    define("DB_HOST", "127.0.0.1");
+    define("DB_PORT", "5432");
+    define("DB_NAME", "template1");
+    define("DB_USER", "postgres");
+    define("DB_PASSWORD", "12345");
+    // end of PgsqlDB configure connection */
+} else {
+    exit();
+}
 define("PARTS_CHUNK", 3900);
 define("SYNC_OVERRIDE_SEND_IMIT", 20000);
 
@@ -70,10 +78,13 @@ if ($method == "OPTIONS") {
 
 require_once __DIR__ . "/utils.php";
 
-if (DB_TYPE == 'mysql') {
+if (DB_TYPE == 'MysqlDB') {
     require_once __DIR__ . "/MysqlDB.php";
     $db = new MysqlDB($customer);
-} else if (DB_TYPE == 'sqlite') {
+} else if (DB_TYPE == 'PgsqlDB') {
+    require_once __DIR__ . "/PgsqlDB.php";
+    $db = new PgsqlDB($customer);
+} else if (DB_TYPE == 'SqliteDB') {
     require_once __DIR__ . "/SqliteDB.php";
     $db = new SqliteDB($customer);
 } else {

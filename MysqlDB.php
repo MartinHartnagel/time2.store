@@ -10,6 +10,21 @@ class MysqlDB
     {
         $this->id = $id;
         $this->db = new PDO('mysql:host=' . DB_HOST . ':' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASSWORD);
+
+        if (DB_ALLOW_CREATE_TABLES) {
+            $exists = true;
+            try {
+                $result = $this->db->query('SELECT 1 FROM `' . $this->id . '_LAYOUT` LIMIT 1');
+            } catch (Exception $e) {
+                $exists = false;
+            }
+            if ($$exists) {
+                $this->db->exec('CREATE TABLE IF NOT EXISTS ' . $this->id . '_LAYOUT (time bigint NOT NULL UNIQUE, value text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL);');
+                $this->db->exec('CREATE TABLE IF NOT EXISTS ' . $this->id . '_EVENT (time bigint NOT NULL UNIQUE, name varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, color varchar(7) NOT NULL, end bigint);');
+                $this->db->exec('CREATE TABLE IF NOT EXISTS ' . $this->id . '_INFO (time bigint NOT NULL UNIQUE, info text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL);');
+                $this->db->exec('CREATE TABLE IF NOT EXISTS ' . $this->id . '_INVOICE (`key` varchar(256) NOT NULL UNIQUE, `value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL);');
+            }
+        }
     }
 
     public function loadLayoutAndChanged($at, &$layout, &$changed)
