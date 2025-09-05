@@ -8,13 +8,13 @@ if (true) { // set to false to not use SqliteDB
     // end of SqliteDB configure connection */
 } else if (false) { // set to true to use MysqlDB
     /* MysqlDB configure connection: */
-    define("DB_TYPE", "MysqlSB");
+    define("DB_TYPE", "MysqlDB");
     define("DB_HOST", "127.0.0.1");
     define("DB_PORT", "3306");
     define("DB_NAME", "db123");
     define("DB_USER", "user");
     define("DB_PASSWORD", "12345");
-    // end of MysqlSB configure connection */
+    // end of MysqlDB configure connection */
 } else if (false) { // set to true to use PgsqlDB
     /* PgsqlDB configure connection: */
     define("DB_TYPE", "PgsqlDB");
