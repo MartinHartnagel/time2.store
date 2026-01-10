@@ -25,7 +25,7 @@ if ($method == "POST") {
     }
 
     if (
-        !in_array($eventType[1], ["layout", "event", "invoice", "sync-check"])
+        !in_array($eventType[1], ["layout", "event", "invoice", "note", "sync-check"])
     ) {
         exit();
     }
@@ -43,8 +43,8 @@ if ($method == "POST") {
     }
 
     debugLog($customer . " eventType " . $eventType[1]);
-    if (in_array($eventType[1], ["layout", "event", "invoice"])) {
-        if (in_array($eventType[1], ["layout", "invoice"])) {
+    if (in_array($eventType[1], ["layout", "event", "invoice", "note"])) {
+        if (in_array($eventType[1], ["layout", "invoice", "note"])) {
             $input = [$input];
         }
         debugLog($customer . " input " . var_export($input, true));
@@ -60,6 +60,17 @@ if ($method == "POST") {
                 } else {
                     $db->storeInvoice($i['invoice']['invoiceNumber'], $i);
                     debugLog($customer . " storeInvoice completed");
+                }
+            } else if ($eventType[1] == 'note') {
+                if (isset($i['deleteAllNotes'])) {
+                    $db->deleteAllNotes();
+                    debugLog($customer . " deleteAllNotes completed");
+                } else if (isset($i['deleteNote'])) {
+                    $db->deleteNote($i['deleteNote']);
+                    debugLog($customer . " deleteNote completed");
+                } else {
+                    $db->storeNote($i['id'], $i);
+                    debugLog($customer . " storeNote completed");
                 }
             } else if (isset($i["n"])) {
                 //event

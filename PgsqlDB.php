@@ -18,7 +18,8 @@ class PgsqlDB
                 $this->db->exec('CREATE TABLE IF NOT EXISTS "' . $this->id . '_LAYOUT" (time bigint NOT NULL UNIQUE, value text NOT NULL);');
                 $this->db->exec('CREATE TABLE IF NOT EXISTS "' . $this->id . '_EVENT" (time bigint NOT NULL UNIQUE, name varchar(256) NOT NULL, color varchar(7) NOT NULL, "end" bigint);');
                 $this->db->exec('CREATE TABLE IF NOT EXISTS "' . $this->id . '_INFO" (time bigint NOT NULL UNIQUE, info text NOT NULL);');
-                $this->db->exec('CREATE TABLE IF NOT EXISTS "' . $this->id . '_INVOICE" ("key" varchar(256) NOT NULL UNIQUE, value text  NOT NULL);');
+                $this->db->exec('CREATE TABLE IF NOT EXISTS "' . $this->id . '_INVOICE" ("key" varchar(256) NOT NULL UNIQUE, value text NOT NULL);');
+                $this->db->exec('CREATE TABLE IF NOT EXISTS "' . $this->id . '_NOTE" ("key" varchar(256) NOT NULL UNIQUE, value text NOT NULL);');
             }
         }
     }
@@ -208,6 +209,20 @@ class PgsqlDB
         $statement->execute(['key' => $key, 'value' => $value]);
     }
 
+    public function storeNote($name, $obj)
+    {
+        $this->storeNoteKeyValue('invoice_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $name), json_encode($obj));
+    }
+
+    private function storeNoteKeyValue($key, $value)
+    {
+        $this->deleteNoteKeyValue($key);
+        $sql = 'INSERT INTO "' . $this->id . '_NOTE" ("key", "value") VALUES (:key, :value)';
+        $statement = $this->db->prepare($sql);
+        $statement->execute(['key' => $key, 'value' => $value]);
+    }
+
+
     public function deleteInvoice($invoiceNumber)
     {
         $key = 'invoice_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $invoiceNumber);
@@ -221,9 +236,29 @@ class PgsqlDB
         $statement->execute(['key' => $key]);
     }
 
+    public function deleteNote($name)
+    {
+        $key = 'note_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $name);
+        $this->deleteNoteKeyValue($key);
+    }
+
+    private function deleteNoteKeyValue($key)
+    {
+        $sql = 'DELETE FROM "' . $this->id . '_NOTE" WHERE "key" = :key';
+        $statement = $this->db->prepare($sql);
+        $statement->execute(['key' => $key]);
+    }
+
     public function deleteAllInvoices()
     {
         $sql = 'DELETE FROM "' . $this->id . '_INVOICE"';
+        $statement = $this->db->prepare($sql);
+        $statement->execute([]);
+    }
+
+    public function deleteAllNotes()
+    {
+        $sql = 'DELETE FROM "' . $this->id . '_NOTE"';
         $statement = $this->db->prepare($sql);
         $statement->execute([]);
     }

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS LAYOUT (time int NOT NULL UNIQUE, value text NOT NULL
 CREATE TABLE IF NOT EXISTS EVENT (time int NOT NULL UNIQUE, name varchar(256) NOT NULL, color varchar(7) NOT NULL, end int);
 CREATE TABLE IF NOT EXISTS INFO (time int NOT NULL UNIQUE, info text NOT NULL);
 CREATE TABLE IF NOT EXISTS INVOICE (`key` varchar(256) NOT NULL UNIQUE, `value` text NOT NULL);
+CREATE TABLE IF NOT EXISTS NOTE (`key` varchar(256) NOT NULL UNIQUE, `value` text NOT NULL);
 EOF;
 
         $ret = $this->db->exec($sql);
@@ -237,6 +238,22 @@ EOF;
         $statement->execute(["key" => $key, "value" => $value]);
     }
 
+    public function storeNote($name, $obj)
+    {
+        $this->storeNoteKeyValue(
+            "note_" . preg_replace("/[^0-9a-zA-Z\.]/", "_", $name),
+            json_encode($obj)
+        );
+    }
+
+    private function storeNoteKeyValue($key, $value)
+    {
+        $this->deleteNoteKeyValue($key);
+        $sql = "INSERT INTO `NOTE` (`key`, `value`) VALUES (:key, :value)";
+        $statement = $this->db->prepare($sql);
+        $statement->execute(["key" => $key, "value" => $value]);
+    }
+
     public function deleteInvoice($invoiceNumber)
     {
         $key =
@@ -251,9 +268,30 @@ EOF;
         $statement->execute(["key" => $key]);
     }
 
+    public function deleteNote($name)
+    {
+        $key =
+            "note_" . preg_replace("/[^0-9a-zA-Z\.]/", "_", $name);
+        $this->deleteNoteKeyValue($key);
+    }
+
+    private function deleteNoteKeyValue($key)
+    {
+        $sql = "DELETE FROM `NOTE` WHERE `key` = :key";
+        $statement = $this->db->prepare($sql);
+        $statement->execute(["key" => $key]);
+    }
+
     public function deleteAllInvoices()
     {
         $sql = 'DELETE FROM `INVOICE`';
+        $statement = $this->db->prepare($sql);
+        $statement->execute([]);
+    }
+
+    public function deleteAllNotes()
+    {
+        $sql = 'DELETE FROM `NOTE`';
         $statement = $this->db->prepare($sql);
         $statement->execute([]);
     }
