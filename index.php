@@ -123,6 +123,7 @@ if ($method == "POST") {
         }
         $db->loadEventDays($days);
         $db->loadInvoiceChecksums($invoiceChecksums);
+        $db->loadNoteChecksums($noteChecksums);
 
         $vals = [];
         $checksums = [];
@@ -142,6 +143,9 @@ if ($method == "POST") {
         foreach ($invoiceChecksums as $invoiceKey => $invoiceChecksum) {
             $checksums[$invoiceKey] = $invoiceChecksum;
         }
+        foreach ($noteChecksums as $noteKey => $noteChecksum) {
+            $checksums[$noteKey] = $noteChecksum;
+        }
 
         $keys = array_unique(
             array_merge(array_keys($input), array_keys($checksums))
@@ -152,7 +156,7 @@ if ($method == "POST") {
         $estimatedSize = 0;
         foreach ($keys as $k) {
             if (isset($input[$k]) && !isset($checksums[$k])) {
-                if (strpos($k, 'invoice_') !== 0) {
+                if (strpos($k, 'invoice_') !== 0 && strpos($k, 'note_') !== 0) {
                     $overrides[$k] = "";
                 }
             } elseif (!isset($input[$k]) && isset($checksums[$k])) {
@@ -165,6 +169,9 @@ if ($method == "POST") {
                     foreach ($invoice['assets'] as $key) {
                         $overrides[$key] = $db->loadInvoiceValue($key);
                     }
+                } elseif (strpos($k, 'note_') === 0) {
+                    $noteJson = $db->loadNote($k);
+                    $overrides[$k] = $noteJson;
                 } else {
                     $overrides[$k] = $vals[$k];
                 }
@@ -182,6 +189,9 @@ if ($method == "POST") {
                     foreach ($invoice['assets'] as $key) {
                         $overrides[$key] = $db->loadInvoiceValue($key);
                     }
+                } elseif (strpos($k, 'note_') === 0) {
+                    $noteJson = $db->loadNote($k);
+                    $overrides[$k] = $noteJson;
                 } else {
                     $overrides[$k] = $vals[$k];
                 }

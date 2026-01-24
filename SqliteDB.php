@@ -206,7 +206,7 @@ EOF;
     public function loadInvoiceValue($key)
     {
         $stmt = $this->db->prepare(
-            "SELECT `value` FROM `INVOICE` WHERE `key` like :key"
+            "SELECT `value` FROM `INVOICE` WHERE `key` = :key"
         );
         $stmt->execute(["key" => $key]);
         $data = $stmt->fetch();
@@ -236,6 +236,29 @@ EOF;
         $sql = "INSERT INTO `INVOICE` (`key`, `value`) VALUES (:key, :value)";
         $statement = $this->db->prepare($sql);
         $statement->execute(["key" => $key, "value" => $value]);
+    }
+
+    public function loadNoteChecksums(&$checksums)
+    {
+        $stmt = $this->db->prepare(
+            'SELECT `key`, `value` FROM `NOTE` WHERE `key` like \'note_%\''
+        );
+        $stmt->execute([]);
+        $checksums = [];
+        while ($data = $stmt->fetch()) {
+            $checksums[$data["key"]] = hash("sha256", $data["value"]);
+        }
+    }
+
+    public function loadNote($key)
+    {
+        $stmt = $this->db->prepare('SELECT `value` FROM `NOTE` WHERE `key` = :key');
+        $stmt->execute(['key' => $key]);
+        $data = $stmt->fetch();
+        if (!$data) {
+            return null;
+        }
+        return $data['value'];
     }
 
     public function storeNote($name, $obj)

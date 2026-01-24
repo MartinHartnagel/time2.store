@@ -185,7 +185,7 @@ class MysqlDB
 
     public function loadInvoiceValue($key)
     {
-        $stmt = $this->db->prepare('SELECT `value` FROM `' . $this->id . '_INVOICE` WHERE `key` like :key');
+        $stmt = $this->db->prepare('SELECT `value` FROM `' . $this->id . '_INVOICE` WHERE `key` = :key');
         $stmt->execute(['key' => $key]);
         $data = $stmt->fetch();
         if (!$data) {
@@ -213,6 +213,26 @@ class MysqlDB
         $statement->execute(['key' => $key, 'value' => $value]);
     }
 
+    public function loadNoteChecksums(&$checksums)
+    {
+        $stmt = $this->db->prepare('SELECT `key`, SHA2(`value`, 256) as  `checksum` FROM `' . $this->id . '_NOTE` WHERE `key` like \'note_%\'');
+        $stmt->execute([]);
+        $checksums = [];
+        while ($data = $stmt->fetch()) {
+            $checksums[$data['key']] = $data['checksum'];
+        }
+    }
+
+    public function loadNote($key)
+    {
+        $stmt = $this->db->prepare('SELECT `value` FROM `' . $this->id . '_NOTE` WHERE `key` = :key');
+        $stmt->execute(['key' => $key]);
+        $data = $stmt->fetch();
+        if (!$data) {
+            return null;
+        }
+        return $data['value'];
+    }
 
     public function storeNote($name, $obj)
     {
