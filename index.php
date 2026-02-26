@@ -111,7 +111,7 @@ if ($method == "POST") {
             }
         } else {
             postSSE($customer, $userId, "*", $content);
-            debugLog("forked postSSE completed");
+            debugLog("postSSE completed");
         }
     } elseif ($eventType[1] == "sync-check") {
         $db->loadLayoutAndChanged(time() * 1000, $layout, $layoutChanged);

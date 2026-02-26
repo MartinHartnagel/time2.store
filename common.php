@@ -65,8 +65,6 @@ if (strlen($customer) == 0) {
     exit();
 }
 
-define("SUSPEND_SECONDS", 15);
-
 $start = time();
 $accepted = false;
 
