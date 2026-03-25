@@ -10,5 +10,5 @@ function postSSE($customer, $userId, $target, $content)
         )
     );
     $context  = stream_context_create($options);
-    $result = file_get_contents('https://time2.event.emphasize.de/?topic=' . $customer . '&u=' . $userId . '&target=' . $target, false, $context);
+    file_get_contents('https://' . $_SERVER['SERVER_NAME'] . '/event/?topic=' . $customer . '&u=' . $userId . '&target=' . $target, false, $context);
 }

@@ -74,7 +74,7 @@ if ($method == "POST") {
                 }
             } else if (isset($i["n"])) {
                 //event
-                $db->storeEvent($i["s"], str_replace("\n", "", $i["n"]), $i["c"], $i["e"]);
+                $db->storeEvent($i["s"], str_replace("\n", "", $i["n"]), $i["c"], $i["e"] ?? null);
                 debugLog("storeEvent completed");
             } elseif (isset($i["i"])) {
                 //info
