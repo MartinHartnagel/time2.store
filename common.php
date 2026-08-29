@@ -1,35 +1,9 @@
 <?php
 
-define("DB_ALLOW_CREATE_TABLES", false); // set to true only temporarily to create the tables for your customer
+require_once __DIR__ . "/config.php";
 
-if (true) { // set to false to not use SqliteDB
-    /* SqliteDB configure connection: */
-    define("DB_TYPE", "SqliteDB"); 
-    // end of SqliteDB configure connection */
-} else if (false) { // set to true to use MysqlDB
-    /* MysqlDB configure connection: */
-    define("DB_TYPE", "MysqlDB");
-    define("DB_HOST", "127.0.0.1");
-    define("DB_PORT", "3306");
-    define("DB_NAME", "db123");
-    define("DB_USER", "user");
-    define("DB_PASSWORD", "12345");
-    // end of MysqlDB configure connection */
-} else if (false) { // set to true to use PgsqlDB
-    /* PgsqlDB configure connection: */
-    define("DB_TYPE", "PgsqlDB");
-    define("DB_TYPE", "pgsql"); 
-    define("DB_HOST", "127.0.0.1");
-    define("DB_PORT", "5432");
-    define("DB_NAME", "template1");
-    define("DB_USER", "postgres");
-    define("DB_PASSWORD", "12345");
-    // end of PgsqlDB configure connection */
-} else {
-    exit();
-}
-define("PARTS_CHUNK", 3900);
-define("SYNC_OVERRIDE_SEND_IMIT", 20000);
+define("SYNC_OVERRIDE_SEND_INIT", 20000);
+define("BAG_RETRY", 2);
 
 define("DEBUG", false);
 if (DEBUG) $log = fopen(__DIR__ . "/debug.log", "a");
@@ -60,7 +34,7 @@ if ($method == 'OPTIONS') {
     exit();
 }
 
-$customer = preg_replace("/[^A-Za-z0-9]/", "", $_REQUEST["topic"]);
+$customer = $topic;
 if (strlen($customer) == 0) {
     exit();
 }

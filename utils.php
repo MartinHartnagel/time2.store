@@ -12,3 +12,24 @@ function postSSE($customer, $userId, $target, $content)
     $context  = stream_context_create($options);
     file_get_contents('https://' . $_SERVER['SERVER_NAME'] . '/event/?topic=' . $customer . '&u=' . $userId . '&target=' . $target, false, $context);
 }
+
+function getBag($bid)
+{
+    $result = file_get_contents('https://' . $_SERVER['SERVER_NAME'] . '/bag/?bid='.$bid);
+    return $result;
+}
+
+function postBag($content)
+{
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: text/plain;charset=UTF-8",
+            'method'  => 'POST',
+            'content' => $content,
+        )
+    );
+    $context  = stream_context_create($options);
+    $result = file_get_contents('https://' . $_SERVER['SERVER_NAME'] . '/bag/', false, $context);
+    $o = json_decode($result, true);
+    return $o['bid'];
+}
