@@ -5,7 +5,7 @@ Download to install a storage service on your hosted domain and connect it to th
 ## Mimimum Requirements
 
 Your hosted domain *must* have a valid Https certificate! 
-Nginx, PHP and PDO-SQLite/-MySql should be available! 
+Nginx, PHP and PDO-SQLite/-MySql/-Postgres should be available! 
 
 To check this and determine the url for the connection, open the following in your browser: `https://your-domain/path-to/check_pdo.php`
 
@@ -15,9 +15,10 @@ Array
 (
     [0] => mysql
     [1] => sqlite
+    [2] => pgsql
 )
 ```
-showing that both sqlite and mysql PDO extensions are available.
+showing that mysql, sqlite and pgsql PDO extensions are available.
 
 One can then use `https://time2.emphasize.de?m=s&d=your-domain/path-to` as a connection. Default a sqlite db flatfile will be created with your automatically generated user-id as a customer identifier.
 
