@@ -143,7 +143,7 @@ abstract class PdoDB
 
     public function storeInvoice($invoiceNumber, $extracted)
     {
-        $this->storeInvoiceKeyValue('invoice_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $invoiceNumber), json_encode($extracted['invoice']));
+        $this->storeInvoiceKeyValue('invoice_' . $invoiceNumber, json_encode($extracted['invoice']));
         foreach ($extracted['twigs'] as $k => $v) {
             $this->storeInvoiceKeyValue($k, $v);
         }
@@ -187,7 +187,7 @@ abstract class PdoDB
 
     public function deleteInvoice($invoiceNumber)
     {
-        $key = 'invoice_' . preg_replace("/[^0-9a-zA-Z\.]/", '_', $invoiceNumber);
+        $key = 'invoice_' . $invoiceNumber;
         $this->deleteInvoiceKeyValue($key);
     }
 
