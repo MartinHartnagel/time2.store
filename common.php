@@ -13,7 +13,7 @@ function debugLog($message) {
     if (DEBUG) fwrite($log, date("c") . " " . $message . "\n");
 }
 
-$allowed = ['https://time2.emphasize.de', 'https://time2-dev.emphasize.de', 'http://localhost:3000'];
+$allowed = ['https://time2.emphasize.de', 'https://time2-clone.emphasize.de', 'https://time2-dev.emphasize.de', 'http://localhost:5173'];
 $origin = isset($_SERVER['HTTP_ORIGIN']) ? preg_replace("/[^A-Za-z0-9:\/\.-_]/", '', $_SERVER['HTTP_ORIGIN']) : null;
 $method = $_SERVER['REQUEST_METHOD'];
 
